@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"link-shortener/config"
 	"link-shortener/pkg/jwt"
 	"link-shortener/pkg/request"
@@ -38,10 +37,23 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	fmt.Println(body)
+
+	user, err := h.deps.AuthService.Login(body.Email, body.Password)
+	if err != nil {
+		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+
+	token, err := h.deps.Jwt.Create(map[string]any{
+		"email": user.Email,
+	})
+	if err != nil {
+		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
 
 	response.Json(w, 200, &LoginResponsePayload{
-		Token: "token",
+		Token: token,
 	})
 }
 
@@ -66,9 +78,9 @@ func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims, err := h.deps.Jwt.Parse(token)
-	fmt.Println("err", err)
-	fmt.Println("claims", claims)
+	// claims, err := h.deps.Jwt.Parse(token)
+	// fmt.Println("err", err)
+	// fmt.Println("claims", claims)
 
 	response.Json(w, 200, &LoginResponsePayload{
 		Token: token,

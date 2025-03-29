@@ -39,7 +39,7 @@ func main() {
 	router := http.NewServeMux()
 	auth.ReqisterAuthHandler(auth.AuthHandlerDeps{
 		AuthService: authService,
-		Jwt:         jwt.NewJWT("aaa"),
+		Jwt:         jwt.NewJWT(conf.Auth.Secret),
 		Router:      router,
 		Config:      conf,
 	})
