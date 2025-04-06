@@ -1,8 +1,12 @@
 package link
 
 import (
-	"fmt"
+	"link-shortener/config"
+	"link-shortener/internal/auth"
+	"link-shortener/internal/model"
 	apperror "link-shortener/pkg/app-error"
+	"link-shortener/pkg/jwt"
+	"link-shortener/pkg/middleware"
 	"link-shortener/pkg/request"
 	"link-shortener/pkg/response"
 	"net/http"
@@ -12,35 +16,52 @@ type Handler struct {
 	LinkHandlerDeps
 }
 
+type userService interface {
+	FindByEmail(email string) (*model.User, error)
+}
+
 type LinkHandlerDeps struct {
-	Router  *http.ServeMux
-	Service *Service
+	Router      *http.ServeMux
+	Service     *Service
+	UserService userService
+	Config      *config.Config
 }
 
 func RegisterLinkHandler(linkHandlerDeps LinkHandlerDeps) {
 	handler := &Handler{
 		linkHandlerDeps,
 	}
-	handler.Router.HandleFunc("POST /link", handler.create)
-	handler.Router.HandleFunc("GET /{hash}", handler.goTo)
-	handler.Router.HandleFunc("DELETE /link", handler.delete)
+	handler.Router.Handle("POST /link", middleware.IsAuthed(http.HandlerFunc(handler.create), *handler.Config))
+	handler.Router.Handle("GET /{hash}", http.HandlerFunc(handler.goTo))
+	handler.Router.Handle("DELETE /link", middleware.IsAuthed(http.HandlerFunc(handler.delete), *handler.Config))
 
 }
 
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
+	userData, err := jwt.GetClaimsFromContext[auth.JwtAuthUserData](r.Context())
+	if err != nil {
+		apperror.HandleError(apperror.Internal("Failed to proccess JWT token"), w)
+		return
+	}
+
+	user, err := h.UserService.FindByEmail(userData.Email)
+	if err != nil {
+		apperror.HandleError(err, w)
+		return
+	}
+
 	body, err := request.GetBody[CreateRequestPayload](w, r)
 	if err != nil {
-		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
-	fmt.Println(body)
 
-	createdLink, err := h.Service.Create(body.Url)
+	createdLink, err := h.Service.Create(body.Url, user.ID)
 	if err != nil {
-		h.handleAppError(err, w)
+		apperror.HandleError(err, w)
 		return
 	}
-	response.Json(w, 200, &createdLink)
+	response.Json(w, http.StatusOK, &createdLink)
 }
 
 func (h *Handler) goTo(w http.ResponseWriter, r *http.Request) {
@@ -49,36 +70,41 @@ func (h *Handler) goTo(w http.ResponseWriter, r *http.Request) {
 		hash: hash,
 	})
 	if err != nil {
-		h.handleAppError(err, w)
+		apperror.HandleError(err, w)
 		return
 	}
 	http.Redirect(w, r, link.Url, http.StatusSeeOther)
 }
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
+	userData, err := jwt.GetClaimsFromContext[auth.JwtAuthUserData](r.Context())
+	if err != nil {
+		apperror.HandleError(apperror.Internal("Failed to proccess JWT token"), w)
+		return
+	}
+
+	user, err := h.UserService.FindByEmail(userData.Email)
+	if err != nil {
+		apperror.HandleError(err, w)
+		return
+	}
+
 	body, err := request.GetBody[DeleteRequestPayload](w, r)
 	if err != nil {
-		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
 
 	err = h.Service.Delete(&FindParams{
-		hash: body.Hash,
-		url:  body.Url,
-		id:   body.Id,
+		hash:   body.Hash,
+		url:    body.Url,
+		id:     body.Id,
+		userId: user.ID,
 	})
 	if err != nil {
-		h.handleAppError(err, w)
+		apperror.HandleError(apperror.Internal(err.Error()), w)
 		return
 	}
 
 	response.Json(w, 200, &map[string]string{"message": "Link deleted"})
-}
-
-func (h *Handler) handleAppError(err error, w http.ResponseWriter) {
-	if appErr, ok := err.(*apperror.AppError); ok {
-		http.Error(w, appErr.Message, appErr.Code)
-	} else {
-		http.Error(w, "Unexpected error occurred", http.StatusInternalServerError)
-	}
 }

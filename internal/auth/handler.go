@@ -2,6 +2,7 @@ package auth
 
 import (
 	"link-shortener/config"
+	apperror "link-shortener/pkg/app-error"
 	"link-shortener/pkg/jwt"
 	"link-shortener/pkg/request"
 	"link-shortener/pkg/response"
@@ -19,10 +20,6 @@ type AuthHandlerDeps struct {
 	AuthService *Service
 }
 
-type Test struct {
-	SomeField string
-}
-
 func ReqisterAuthHandler(AuthHandlerDeps AuthHandlerDeps) {
 	handler := &authHandler{
 		deps: AuthHandlerDeps,
@@ -34,13 +31,13 @@ func ReqisterAuthHandler(AuthHandlerDeps AuthHandlerDeps) {
 func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 	body, err := request.GetBody[LoginRequestPayload](w, r)
 	if err != nil {
-		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
 
 	user, err := h.deps.AuthService.Login(body.Email, body.Password)
 	if err != nil {
-		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		apperror.HandleError(err, w)
 		return
 	}
 
@@ -48,7 +45,7 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 		"email": user.Email,
 	})
 	if err != nil {
-		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		apperror.HandleError(apperror.Unauthorized(err.Error()), w)
 		return
 	}
 
@@ -60,13 +57,13 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
 	body, err := request.GetBody[RegisterRequestPayload](w, r)
 	if err != nil {
-		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
 
 	user, err := h.deps.AuthService.Register(body.Email, body.Password, body.Name)
 	if err != nil {
-		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
 
@@ -74,13 +71,9 @@ func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
 		"email": user.Email,
 	})
 	if err != nil {
-		response.Json(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
-
-	// claims, err := h.deps.Jwt.Parse(token)
-	// fmt.Println("err", err)
-	// fmt.Println("claims", claims)
 
 	response.Json(w, 200, &LoginResponsePayload{
 		Token: token,

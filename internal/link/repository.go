@@ -1,7 +1,7 @@
 package link
 
 import (
-	"errors"
+	"link-shortener/internal/model"
 	"link-shortener/pkg/database"
 )
 
@@ -15,7 +15,7 @@ func NewRepository(db *database.Database) *Repository {
 	}
 }
 
-func (r *Repository) Create(link *Link) (*Link, error) {
+func (r *Repository) Create(link *model.Link) (*model.Link, error) {
 	err := r.Database.Create(link).Error
 	if err != nil {
 		return nil, err
@@ -24,29 +24,36 @@ func (r *Repository) Create(link *Link) (*Link, error) {
 }
 
 type FindParams struct {
-	hash string
-	url  string
-	id   uint
+	hash   string
+	url    string
+	id     uint
+	userId uint
 }
 
-func (r *Repository) FindFirst(params *FindParams) (*Link, error) {
-	var link Link
+func (r *Repository) FindFirst(params *FindParams) (*model.Link, error) {
+	var link model.Link
+	query := r.Database.Model(&model.Link{})
+
 	if params.hash != "" {
-		res := r.Database.First(&link, "hash = ?", params.hash)
-		return &link, res.Error
+		query = query.Where("hash = ?", params.hash)
 	}
 	if params.url != "" {
-		res := r.Database.First(&link, "url = ?", params.url)
-		return &link, res.Error
+		query = query.Where("url = ?", params.url)
 	}
 	if params.id != 0 {
-		res := r.Database.First(&link, "id = ?", params.id)
-		return &link, res.Error
+		query = query.Where("id = ?", params.id)
+	}
+	if params.userId != 0 {
+		query.Where("user_id = ?", params.userId)
 	}
 
-	return nil, errors.New("no params provided")
+	if err := query.First(&link).Error; err != nil {
+		return nil, err
+	}
+
+	return &link, nil
 }
 
-func (r *Repository) Delete(link *Link) error {
+func (r *Repository) Delete(link *model.Link) error {
 	return r.Database.Delete(link).Error
 }

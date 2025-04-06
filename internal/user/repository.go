@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"link-shortener/internal/model"
 	"link-shortener/pkg/database"
 )
 
@@ -13,7 +14,7 @@ func NewRepository(db *database.Database) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) FindOne(user *User) error {
+func (r *Repository) FindOne(user *model.User) error {
 	res := r.db.Where("email = ?", user.Email).First(&user)
 
 	if res.Error != nil {
@@ -25,7 +26,7 @@ func (r *Repository) FindOne(user *User) error {
 	return nil
 }
 
-func (r *Repository) Create(user *User) (*User, error) {
+func (r *Repository) Create(user *model.User) (*model.User, error) {
 	err := r.db.Create(user).Error
 	if err != nil {
 		return nil, err

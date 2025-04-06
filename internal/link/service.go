@@ -1,6 +1,9 @@
 package link
 
-import apperror "link-shortener/pkg/app-error"
+import (
+	"link-shortener/internal/model"
+	apperror "link-shortener/pkg/app-error"
+)
 
 type Service struct {
 	LinkServiceDeps
@@ -14,16 +17,20 @@ func NewLinkService(deps LinkServiceDeps) *Service {
 	return &Service{deps}
 }
 
-func (s *Service) Create(url string) (*Link, error) {
+func (s *Service) Create(url string, userId uint) (*model.Link, error) {
 	existingLink, _ := s.Find(&FindParams{url: url})
 	if existingLink != nil {
 		return nil, apperror.Conflict("Link already exists")
 	}
-	return s.Repository.Create(NewLink(url))
+	return s.Repository.Create(model.NewLink(url, userId))
 }
 
-func (s *Service) Find(params *FindParams) (*Link, error) {
-	return s.Repository.FindFirst(params)
+func (s *Service) Find(params *FindParams) (*model.Link, error) {
+	link, err := s.Repository.FindFirst(params)
+	if err != nil {
+		return nil, apperror.NotFound("Link not found")
+	}
+	return link, nil
 }
 
 func (s *Service) Delete(params *FindParams) error {

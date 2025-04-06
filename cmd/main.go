@@ -5,6 +5,7 @@ import (
 	"link-shortener/config"
 	"link-shortener/internal/auth"
 	"link-shortener/internal/link"
+	"link-shortener/internal/model"
 	"link-shortener/internal/user"
 	"link-shortener/pkg/database"
 	"link-shortener/pkg/jwt"
@@ -18,7 +19,7 @@ func main() {
 
 	conf := config.GetConfig()
 	db := database.New(&conf.Db)
-	db.Migrate(link.Link{}, user.User{})
+	db.Migrate(model.Link{}, model.User{})
 
 	/** Repositories */
 	linkRepository := link.NewRepository(db)
@@ -44,15 +45,21 @@ func main() {
 		Config:      conf,
 	})
 	link.RegisterLinkHandler(link.LinkHandlerDeps{
-		Router:  router,
-		Service: linkService,
+		Router:      router,
+		Service:     linkService,
+		UserService: userService,
+		Config:      conf,
 	})
+
+	middlewaresChain := middleware.Chain(
+		middleware.Log,
+	)
 
 	appConfig := conf.App
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", appConfig.Port),
-		Handler: middleware.Log(router),
+		Handler: middlewaresChain(router),
 	}
 	log.Info("Server is running on port ", appConfig.Port)
-	server.ListenAndServe()
+	log.Info("Server ended", server.ListenAndServe().Error())
 }

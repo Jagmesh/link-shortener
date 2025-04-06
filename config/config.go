@@ -21,13 +21,17 @@ type AuthConfig struct {
 	Secret string
 }
 
-type DbConfig struct {
+type DbConfigCredentials struct {
 	Host     string
 	Port     int
 	User     string
 	Password string
 	Dbname   string
 	Sslmode  string
+}
+type DbConfig struct {
+	Credentials      DbConfigCredentials
+	MaxRetriesNumber uint8
 }
 
 func GetConfig() *Config {
@@ -44,6 +48,10 @@ func GetConfig() *Config {
 	if err != nil {
 		dbPort = 5432
 	}
+	maxRetriesNumber, err := strconv.Atoi(os.Getenv("DB_MAX_RETRIES"))
+	if err != nil {
+		maxRetriesNumber = 3
+	}
 
 	return &Config{
 		App: AppConfig{
@@ -53,12 +61,15 @@ func GetConfig() *Config {
 			Secret: os.Getenv("AUTH_SECRET"),
 		},
 		Db: DbConfig{
-			Host:     os.Getenv("DB_HOST"),
-			Port:     dbPort,
-			User:     os.Getenv("DB_USER"),
-			Password: os.Getenv("DB_PASSWORD"),
-			Dbname:   os.Getenv("DB_NAME"),
-			Sslmode:  os.Getenv("DB_SSLMODE"),
+			Credentials: DbConfigCredentials{
+				Host:     os.Getenv("DB_HOST"),
+				Port:     dbPort,
+				User:     os.Getenv("DB_USER"),
+				Password: os.Getenv("DB_PASSWORD"),
+				Dbname:   os.Getenv("DB_NAME"),
+				Sslmode:  os.Getenv("DB_SSLMODE"),
+			},
+			MaxRetriesNumber: uint8(maxRetriesNumber),
 		},
 	}
 }

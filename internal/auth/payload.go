@@ -14,3 +14,7 @@ type RegisterRequestPayload struct {
 	Password string `json:"password" validate:"required"`
 	Name     string `json:"name" validate:"required"`
 }
+
+type JwtAuthUserData struct {
+	Email string `json:"email"`
+}

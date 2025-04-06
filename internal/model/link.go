@@ -1,4 +1,4 @@
-package link
+package model
 
 import (
 	"math/rand"
@@ -8,14 +8,16 @@ import (
 
 type Link struct {
 	gorm.Model
-	Url  string `json:"url" gorm:"not null"`
-	Hash string `json:"hash" gorm:"uniqueIndex,not null"`
+	UserID uint   `gorm:"not null"`
+	Url    string `json:"url" gorm:"not null"`
+	Hash   string `json:"hash" gorm:"uniqueIndex,not null"`
 }
 
-func NewLink(url string) *Link {
+func NewLink(url string, userId uint) *Link {
 	return &Link{
-		Url:  url,
-		Hash: randStringRunes(10),
+		UserID: userId,
+		Url:    url,
+		Hash:   randStringRunes(10),
 	}
 }
 

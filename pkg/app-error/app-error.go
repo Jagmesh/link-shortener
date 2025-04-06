@@ -2,6 +2,10 @@ package apperror
 
 import "net/http"
 
+// type AppError interface {
+
+// }
+
 type AppError struct {
 	Message string `json:"message"`
 	Code    int    `json:"code"`
@@ -16,6 +20,18 @@ func (e *AppError) Error() string {
 }
 
 /** 4xx */
+func BadRequest(msg string) *AppError {
+	return New(msg, http.StatusBadRequest)
+}
+
+func Unauthorized(msg string) *AppError {
+	return New(msg, http.StatusUnauthorized)
+}
+
+func Forbidden(msg string) *AppError {
+	return New(msg, http.StatusForbidden)
+}
+
 func NotFound(msg string) *AppError {
 	return New(msg, http.StatusNotFound)
 }

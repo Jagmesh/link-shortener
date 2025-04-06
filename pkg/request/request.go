@@ -2,8 +2,8 @@ package request
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"link-shortener/pkg/logger"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -36,10 +36,9 @@ func isValid[T any](payload T) error {
 	validate := validator.New()
 	err := validate.Struct(payload)
 	if err != nil {
-		// Type assert the error to validator.ValidationErrors
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			for _, validationError := range validationErrors {
-				fmt.Println("validationError: ", validationError)
+				logger.GetLogger().Error("validationError: ", validationError)
 			}
 			return validationErrors
 		}
