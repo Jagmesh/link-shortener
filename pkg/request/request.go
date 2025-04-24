@@ -14,6 +14,7 @@ func GetBody[T any](w http.ResponseWriter, r *http.Request) (T, error) {
 	if err != nil {
 		return *new(T), err
 	}
+	logger.PrintStruct(body, "BODY BODY BODY ")
 
 	if err := isValid[T](body); err != nil {
 		return *new(T), err

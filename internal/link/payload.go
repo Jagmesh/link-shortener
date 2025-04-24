@@ -6,6 +6,6 @@ type CreateRequestPayload struct {
 
 type DeleteRequestPayload struct {
 	Hash string `json:"hash"`
-	Url  string `json:"url" validate:"url"`
+	Url  string `json:"url" validate:"omitempty,url"`
 	Id   uint   `json:"id" validate:"number"`
 }

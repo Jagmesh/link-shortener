@@ -1,13 +1,13 @@
 package auth
 
 import (
-	"link-shortener/internal/model"
+	"link-shortener/model"
 	apperror "link-shortener/pkg/app-error"
 )
 
 type userService interface {
-	FindByEmail(email string) (*model.User, error)
 	Create(email, password, name string) (*model.User, error)
+	FindByEmail(email string) (*model.User, error)
 }
 
 type Service struct {

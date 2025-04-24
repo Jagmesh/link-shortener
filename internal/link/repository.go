@@ -1,7 +1,7 @@
 package link
 
 import (
-	"link-shortener/internal/model"
+	"link-shortener/model"
 	"link-shortener/pkg/database"
 )
 
@@ -55,5 +55,5 @@ func (r *Repository) FindFirst(params *FindParams) (*model.Link, error) {
 }
 
 func (r *Repository) Delete(link *model.Link) error {
-	return r.Database.Delete(link).Error
+	return r.Database.Delete(link, ).Error
 }

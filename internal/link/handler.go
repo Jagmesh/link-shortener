@@ -3,14 +3,18 @@ package link
 import (
 	"link-shortener/config"
 	"link-shortener/internal/auth"
-	"link-shortener/internal/model"
+	"link-shortener/internal/stat"
+	"link-shortener/model"
 	apperror "link-shortener/pkg/app-error"
 	"link-shortener/pkg/jwt"
+	"link-shortener/pkg/logger"
 	"link-shortener/pkg/middleware"
 	"link-shortener/pkg/request"
 	"link-shortener/pkg/response"
 	"net/http"
 )
+
+var log = logger.GetLogger()
 
 type Handler struct {
 	LinkHandlerDeps
@@ -24,6 +28,7 @@ type LinkHandlerDeps struct {
 	Router      *http.ServeMux
 	Service     *Service
 	UserService userService
+	StatService *stat.Service
 	Config      *config.Config
 }
 
@@ -34,7 +39,6 @@ func RegisterLinkHandler(linkHandlerDeps LinkHandlerDeps) {
 	handler.Router.Handle("POST /link", middleware.IsAuthed(http.HandlerFunc(handler.create), *handler.Config))
 	handler.Router.Handle("GET /{hash}", http.HandlerFunc(handler.goTo))
 	handler.Router.Handle("DELETE /link", middleware.IsAuthed(http.HandlerFunc(handler.delete), *handler.Config))
-
 }
 
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +77,11 @@ func (h *Handler) goTo(w http.ResponseWriter, r *http.Request) {
 		apperror.HandleError(err, w)
 		return
 	}
+
+	err = h.StatService.AddClick(link.ID)
+	if err != nil {
+		log.Println("AddClick err ", err.Error())
+	}
 	http.Redirect(w, r, link.Url, http.StatusSeeOther)
 }
 
@@ -102,7 +111,7 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 		userId: user.ID,
 	})
 	if err != nil {
-		apperror.HandleError(apperror.Internal(err.Error()), w)
+		apperror.HandleError(err, w)
 		return
 	}
 

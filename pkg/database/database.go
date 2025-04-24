@@ -10,6 +10,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 type Database struct {
@@ -19,7 +20,9 @@ type Database struct {
 var retries uint8 = 0
 
 func New(config *config.DbConfig) *Database {
-	db, err := gorm.Open(postgres.Open(makeDSN(config.Credentials)), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(makeDSN(config.Credentials)), &gorm.Config{
+		Logger: gormLogger.Default.LogMode(gormLogger.Info),
+	})
 	if err != nil {
 		return reconnect(err, config)
 	}

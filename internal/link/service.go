@@ -1,7 +1,7 @@
 package link
 
 import (
-	"link-shortener/internal/model"
+	"link-shortener/model"
 	apperror "link-shortener/pkg/app-error"
 )
 

@@ -5,8 +5,9 @@ import (
 	"link-shortener/config"
 	"link-shortener/internal/auth"
 	"link-shortener/internal/link"
-	"link-shortener/internal/model"
+	"link-shortener/internal/stat"
 	"link-shortener/internal/user"
+	"link-shortener/model"
 	"link-shortener/pkg/database"
 	"link-shortener/pkg/jwt"
 	"link-shortener/pkg/logger"
@@ -19,11 +20,12 @@ func main() {
 
 	conf := config.GetConfig()
 	db := database.New(&conf.Db)
-	db.Migrate(model.Link{}, model.User{})
+	db.Migrate(model.Link{}, model.User{}, model.Stat{})
 
 	/** Repositories */
 	linkRepository := link.NewRepository(db)
 	userRepository := user.NewRepository(db)
+	statRepository := stat.NewRepository(db)
 
 	/** Services */
 	userService := user.NewService(&user.UserServiceDeps{
@@ -34,6 +36,9 @@ func main() {
 	})
 	linkService := link.NewLinkService(link.LinkServiceDeps{
 		Repository: linkRepository,
+	})
+	statService := stat.NewService(&stat.StatServiceDeps{
+		Repository: statRepository,
 	})
 
 	/** Handlers */
@@ -48,6 +53,7 @@ func main() {
 		Router:      router,
 		Service:     linkService,
 		UserService: userService,
+		StatService: statService,
 		Config:      conf,
 	})
 
