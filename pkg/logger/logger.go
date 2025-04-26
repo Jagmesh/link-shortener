@@ -10,21 +10,23 @@ import (
 
 var log *logrus.Logger
 
+var baseLoggerTextFormaterConfig = &logrus.TextFormatter{
+	FullTimestamp: true,
+	ForceColors:   true,
+	PadLevelText:  true,
+}
+
 func InitLogger() *logrus.Logger {
 	log = &logrus.Logger{
-		Out: os.Stdout,
-		Formatter: &logrus.TextFormatter{
-			FullTimestamp: true,
-			ForceColors:   true,
-			PadLevelText:  true,
-		},
-		Level: logrus.DebugLevel,
+		Out:       os.Stdout,
+		Formatter: baseLoggerTextFormaterConfig,
+		Level:     logrus.DebugLevel,
 	}
 
 	return log
 }
 
-func GetLogger() *logrus.Logger {
+func Get() *logrus.Logger {
 	return log
 }
 
