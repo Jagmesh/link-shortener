@@ -2,7 +2,7 @@ package user
 
 import (
 	"fmt"
-	"link-shortener/model"
+	"link-shortener/entity/model"
 	apperror "link-shortener/pkg/app-error"
 )
 

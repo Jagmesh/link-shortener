@@ -1,15 +1,16 @@
 package apperror
 
-import "net/http"
-
-// type AppError interface {
-
-// }
+import (
+	"link-shortener/pkg/logger"
+	"net/http"
+)
 
 type AppError struct {
 	Message string `json:"message"`
 	Code    int    `json:"code"`
 }
+
+var log = logger.GetWithScopes("APP_ERROR")
 
 func New(message string, code int) *AppError {
 	return &AppError{Message: message, Code: code}

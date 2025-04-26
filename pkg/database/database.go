@@ -19,14 +19,16 @@ type Database struct {
 
 var retries uint8 = 0
 
+var log = logger.GetWithScopes("DATABASE")
+
 func New(config *config.DbConfig) *Database {
 	db, err := gorm.Open(postgres.Open(makeDSN(config.Credentials)), &gorm.Config{
-		Logger: gormLogger.Default.LogMode(gormLogger.Info),
+		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 	})
 	if err != nil {
 		return reconnect(err, config)
 	}
-	logger.GetLogger().Info("Connected to database")
+	log.Info("Connected to database")
 	return &Database{db}
 }
 
@@ -36,17 +38,17 @@ func reconnect(err error, config *config.DbConfig) *Database {
 	}
 	retries++
 
-	logger.GetLogger().Infof("Failed to connect to database. Attemp #%d of %d. Retrying ...", retries, config.MaxRetriesNumber)
+	log.Infof("Failed to connect to database. Attemp #%d of %d. Retrying ...", retries, config.MaxRetriesNumber)
 	time.Sleep(getExponentialDelay(retries))
 	return New(config)
 }
 
 func (db *Database) Migrate(models ...any) {
-	logger.GetLogger().Debug("Running migrations...")
+	log.Debug("Running migrations...")
 	if err := db.AutoMigrate(models...); err != nil {
 		panic(err)
 	}
-	logger.GetLogger().Debug("Migrations completed")
+	log.Debug("Migrations completed")
 }
 
 func makeDSN(params any) string {

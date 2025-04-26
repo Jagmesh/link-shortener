@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"link-shortener/config"
+	model2 "link-shortener/entity/model"
 	"link-shortener/internal/auth"
 	"link-shortener/internal/link"
 	"link-shortener/internal/stat"
 	"link-shortener/internal/user"
-	"link-shortener/model"
+	"link-shortener/pkg/bus"
 	"link-shortener/pkg/database"
 	"link-shortener/pkg/jwt"
 	"link-shortener/pkg/logger"
@@ -16,11 +17,14 @@ import (
 )
 
 func main() {
-	log := logger.InitLogger()
+	logger.InitLogger()
+	log := logger.GetWithScopes("MAIN")
+
+	eventBus := bus.New()
 
 	conf := config.GetConfig()
 	db := database.New(&conf.Db)
-	db.Migrate(model.Link{}, model.User{}, model.Stat{})
+	db.Migrate(model2.Link{}, model2.User{}, model2.Stat{})
 
 	/** Repositories */
 	linkRepository := link.NewRepository(db)
@@ -37,9 +41,10 @@ func main() {
 	linkService := link.NewLinkService(link.LinkServiceDeps{
 		Repository: linkRepository,
 	})
-	statService := stat.NewService(&stat.StatServiceDeps{
+	statService := stat.NewService(&stat.ServiceDeps{
 		Repository: statRepository,
 	})
+	go statService.ListenClick(eventBus)
 
 	/** Handlers */
 	router := http.NewServeMux()
@@ -49,12 +54,12 @@ func main() {
 		Router:      router,
 		Config:      conf,
 	})
-	link.RegisterLinkHandler(link.LinkHandlerDeps{
+	link.RegisterLinkHandler(link.HandlerDeps{
 		Router:      router,
 		Service:     linkService,
 		UserService: userService,
-		StatService: statService,
 		Config:      conf,
+		EventBus:    eventBus,
 	})
 
 	middlewaresChain := middleware.Chain(

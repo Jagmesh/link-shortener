@@ -1,13 +1,12 @@
 package apperror
 
 import (
-	"link-shortener/pkg/logger"
 	"link-shortener/pkg/response"
 	"net/http"
 )
 
 func HandleError(err error, w http.ResponseWriter) {
-	logger.GetLogger().Error("Error occured: ", err)
+	log.Error("Error occured: ", err)
 
 	w.Header().Set("Content-Type", "application/json")
 

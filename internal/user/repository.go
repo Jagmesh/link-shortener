@@ -2,7 +2,7 @@ package user
 
 import (
 	"errors"
-	"link-shortener/model"
+	"link-shortener/entity/model"
 	"link-shortener/pkg/database"
 )
 

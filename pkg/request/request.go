@@ -9,6 +9,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+var log = logger.GetWithScopes("REQUEST")
+
 func GetBody[T any](w http.ResponseWriter, r *http.Request) (T, error) {
 	body, err := jsonDecode[T](r.Body)
 	if err != nil {
@@ -39,7 +41,7 @@ func isValid[T any](payload T) error {
 	if err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			for _, validationError := range validationErrors {
-				logger.GetLogger().Error("validationError: ", validationError)
+				log.Error("validationError: ", validationError)
 			}
 			return validationErrors
 		}

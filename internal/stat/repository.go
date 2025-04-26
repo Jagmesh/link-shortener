@@ -1,7 +1,7 @@
 package stat
 
 import (
-	"link-shortener/model"
+	"link-shortener/entity/model"
 	"link-shortener/pkg/database"
 
 	"gorm.io/gorm"

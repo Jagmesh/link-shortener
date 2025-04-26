@@ -2,37 +2,35 @@ package link
 
 import (
 	"link-shortener/config"
+	"link-shortener/entity/event"
+	"link-shortener/entity/model"
 	"link-shortener/internal/auth"
-	"link-shortener/internal/stat"
-	"link-shortener/model"
 	apperror "link-shortener/pkg/app-error"
+	"link-shortener/pkg/bus"
 	"link-shortener/pkg/jwt"
-	"link-shortener/pkg/logger"
 	"link-shortener/pkg/middleware"
 	"link-shortener/pkg/request"
 	"link-shortener/pkg/response"
 	"net/http"
 )
 
-var log = logger.GetLogger()
-
 type Handler struct {
-	LinkHandlerDeps
+	HandlerDeps
 }
 
 type userService interface {
 	FindByEmail(email string) (*model.User, error)
 }
 
-type LinkHandlerDeps struct {
+type HandlerDeps struct {
 	Router      *http.ServeMux
 	Service     *Service
 	UserService userService
-	StatService *stat.Service
 	Config      *config.Config
+	EventBus    *bus.EventBus
 }
 
-func RegisterLinkHandler(linkHandlerDeps LinkHandlerDeps) {
+func RegisterLinkHandler(linkHandlerDeps HandlerDeps) {
 	handler := &Handler{
 		linkHandlerDeps,
 	}
@@ -78,17 +76,15 @@ func (h *Handler) goTo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.StatService.AddClick(link.ID)
-	if err != nil {
-		log.Println("AddClick err ", err.Error())
-	}
+	go h.EventBus.Publish(event.NewStatClickEvent(link.ID))
+
 	http.Redirect(w, r, link.Url, http.StatusSeeOther)
 }
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	userData, err := jwt.GetClaimsFromContext[auth.JwtAuthUserData](r.Context())
 	if err != nil {
-		apperror.HandleError(apperror.Internal("Failed to proccess JWT token"), w)
+		apperror.HandleError(apperror.Internal("Failed to process JWT token"), w)
 		return
 	}
 
