@@ -23,7 +23,7 @@ var log = logger.GetWithScopes("DATABASE")
 
 func New(config *config.DbConfig) *Database {
 	db, err := gorm.Open(postgres.Open(makeDSN(config.Credentials)), &gorm.Config{
-		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
+		Logger: gormLogger.Default.LogMode(gormLogger.Warn),
 	})
 	if err != nil {
 		return reconnect(err, config)

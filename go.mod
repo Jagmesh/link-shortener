@@ -1,8 +1,6 @@
 module link-shortener
 
-go 1.23.0
-
-toolchain go1.23.5
+go 1.24.2
 
 require (
 	github.com/go-playground/validator/v10 v10.23.0

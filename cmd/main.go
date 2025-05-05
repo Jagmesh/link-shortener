@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"link-shortener/config"
-	model2 "link-shortener/entity/model"
+	"link-shortener/entity/model"
 	"link-shortener/internal/auth"
 	"link-shortener/internal/link"
 	"link-shortener/internal/stat"
@@ -24,7 +24,7 @@ func main() {
 
 	conf := config.GetConfig()
 	db := database.New(&conf.Db)
-	db.Migrate(model2.Link{}, model2.User{}, model2.Stat{})
+	db.Migrate(model.User{}, model.Link{}, model.Stat{})
 
 	/** Repositories */
 	linkRepository := link.NewRepository(db)

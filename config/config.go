@@ -1,11 +1,14 @@
 package config
 
 import (
+	"link-shortener/pkg/logger"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
 )
+
+var log = logger.GetWithScopes("MAIN")
 
 type Config struct {
 	App  AppConfig
@@ -37,7 +40,7 @@ type DbConfig struct {
 func GetConfig() *Config {
 	err := godotenv.Load(".env")
 	if err != nil {
-		panic("Error loading .env file. Using default values")
+		log.Error("Error loading .env file. Using default ENV values")
 	}
 
 	port, err := strconv.Atoi(os.Getenv("APP_PORT"))
