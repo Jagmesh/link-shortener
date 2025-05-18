@@ -24,34 +24,52 @@ func (r *Repository) Create(link *model.Link) (*model.Link, error) {
 }
 
 type FindParams struct {
-	hash   string
-	url    string
-	id     uint
-	userId uint
+	Hash   string
+	Url    string
+	Id     uint
+	UserId uint
 }
 
-func (r *Repository) FindFirst(params *FindParams) (*model.Link, error) {
+func (r *Repository) FindAll(params *FindParams) ([]model.Link, error) {
+	var links []model.Link
+	query := r.Database.Model(&model.Link{})
+
+	if params.Hash != "" {
+		query = query.Where("hash = ?", params.Hash)
+	}
+	if params.Url != "" {
+		query = query.Where("url = ?", params.Url)
+	}
+	if params.Id != 0 {
+		query = query.Where("id = ?", params.Id)
+	}
+	if params.UserId != 0 {
+		query.Where("user_id = ?", params.UserId)
+	}
+
+	err := query.Find(&links).Error
+	return links, err
+}
+
+func (r *Repository) FindOne(params *FindParams) (*model.Link, error) {
 	var link model.Link
 	query := r.Database.Model(&model.Link{})
 
-	if params.hash != "" {
-		query = query.Where("hash = ?", params.hash)
+	if params.Hash != "" {
+		query = query.Where("hash = ?", params.Hash)
 	}
-	if params.url != "" {
-		query = query.Where("url = ?", params.url)
+	if params.Url != "" {
+		query = query.Where("url = ?", params.Url)
 	}
-	if params.id != 0 {
-		query = query.Where("id = ?", params.id)
+	if params.Id != 0 {
+		query = query.Where("id = ?", params.Id)
 	}
-	if params.userId != 0 {
-		query.Where("user_id = ?", params.userId)
-	}
-
-	if err := query.First(&link).Error; err != nil {
-		return nil, err
+	if params.UserId != 0 {
+		query.Where("user_id = ?", params.UserId)
 	}
 
-	return &link, nil
+	err := query.First(&link).Error
+	return &link, err
 }
 
 func (r *Repository) Delete(link *model.Link) error {

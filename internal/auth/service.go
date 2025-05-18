@@ -11,19 +11,19 @@ type userService interface {
 }
 
 type Service struct {
-	deps *AuthServiceDeps
+	*ServiceDeps
 }
 
-type AuthServiceDeps struct {
-	UserSerive userService
+type ServiceDeps struct {
+	UserService userService
 }
 
-func NewService(deps *AuthServiceDeps) *Service {
-	return &Service{deps: deps}
+func NewService(deps *ServiceDeps) *Service {
+	return &Service{deps}
 }
 
 func (s *Service) Login(email, password string) (*model.User, error) {
-	user, err := s.deps.UserSerive.FindByEmail(email)
+	user, err := s.UserService.FindByEmail(email)
 	if err != nil {
 		return nil, err
 	}
@@ -36,5 +36,5 @@ func (s *Service) Login(email, password string) (*model.User, error) {
 }
 
 func (s *Service) Register(email, password, name string) (*model.User, error) {
-	return s.deps.UserSerive.Create(email, password, name)
+	return s.UserService.Create(email, password, name)
 }

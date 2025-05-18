@@ -11,8 +11,8 @@ type Link struct {
 	UserID uint `gorm:"not null"`
 	//TODO: deal with CASCADE deletion
 	Stats []Stat `gorm:"constraint:OnDelete:CASCADE;"`
-	Url   string `json:"url" gorm:"not null"`
-	Hash  string `json:"hash" gorm:"uniqueIndex,not null"`
+	Url   string `gorm:"not null"`
+	Hash  string `gorm:"uniqueIndex;not null"`
 }
 
 func NewLink(url string, userId uint) *Link {

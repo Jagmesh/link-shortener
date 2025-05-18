@@ -7,7 +7,7 @@ import (
 type User struct {
 	gorm.Model
 	Links    []Link
-	Email    string `json:"email" gorm:"uniqueIndex,not null"`
+	Email    string `json:"email" gorm:"uniqueIndex;not null"`
 	Name     string `json:"name" gorm:"not null"`
 	Password string `json:"password" gorm:"not null"`
 }

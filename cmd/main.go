@@ -14,11 +14,16 @@ import (
 	"link-shortener/pkg/logger"
 	"link-shortener/pkg/middleware"
 	"net/http"
+	_ "net/http/pprof"
 )
 
 func main() {
 	logger.InitLogger()
 	log := logger.GetWithScopes("MAIN")
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	eventBus := bus.New()
 
@@ -26,19 +31,21 @@ func main() {
 	db := database.New(&conf.Db)
 	db.Migrate(model.User{}, model.Link{}, model.Stat{})
 
+	jwtService := jwt.NewJWT(conf.Auth.Secret)
+
 	/** Repositories */
 	linkRepository := link.NewRepository(db)
 	userRepository := user.NewRepository(db)
 	statRepository := stat.NewRepository(db)
 
 	/** Services */
-	userService := user.NewService(&user.UserServiceDeps{
+	userService := user.NewService(&user.ServiceDeps{
 		Repository: userRepository,
 	})
-	authService := auth.NewService(&auth.AuthServiceDeps{
-		UserSerive: userService,
+	authService := auth.NewService(&auth.ServiceDeps{
+		UserService: userService,
 	})
-	linkService := link.NewLinkService(link.LinkServiceDeps{
+	linkService := link.NewLinkService(&link.ServiceDeps{
 		Repository: linkRepository,
 	})
 	statService := stat.NewService(&stat.ServiceDeps{
@@ -48,18 +55,26 @@ func main() {
 
 	/** Handlers */
 	router := http.NewServeMux()
-	auth.ReqisterAuthHandler(auth.AuthHandlerDeps{
+	auth.RegisterAuthHandler(&auth.HandlerDeps{
 		AuthService: authService,
-		Jwt:         jwt.NewJWT(conf.Auth.Secret),
+		Jwt:         jwtService,
 		Router:      router,
 		Config:      conf,
 	})
-	link.RegisterLinkHandler(link.HandlerDeps{
+	link.RegisterLinkHandler(&link.HandlerDeps{
 		Router:      router,
 		Service:     linkService,
 		UserService: userService,
 		Config:      conf,
 		EventBus:    eventBus,
+	})
+	stat.RegisterStatHandler(&stat.HandlerDeps{
+		Router:      router,
+		Service:     statService,
+		UserService: userService,
+		LinkService: linkService,
+		Jwt:         jwtService,
+		Config:      conf,
 	})
 
 	middlewaresChain := middleware.Chain(

@@ -6,27 +6,35 @@ import (
 )
 
 type Service struct {
-	LinkServiceDeps
+	*ServiceDeps
 }
 
-type LinkServiceDeps struct {
+type ServiceDeps struct {
 	Repository *Repository
 }
 
-func NewLinkService(deps LinkServiceDeps) *Service {
+func NewLinkService(deps *ServiceDeps) *Service {
 	return &Service{deps}
 }
 
 func (s *Service) Create(url string, userId uint) (*model.Link, error) {
-	existingLink, _ := s.Find(&FindParams{url: url})
+	existingLink, _ := s.FindOne(&FindParams{Url: url})
 	if existingLink != nil {
 		return nil, apperror.Conflict("Link already exists")
 	}
 	return s.Repository.Create(model.NewLink(url, userId))
 }
 
-func (s *Service) Find(params *FindParams) (*model.Link, error) {
-	link, err := s.Repository.FindFirst(params)
+func (s *Service) FindAll(params *FindParams) ([]model.Link, error) {
+	links, err := s.Repository.FindAll(params)
+	if err != nil || len(links) == 0 {
+		return nil, apperror.NotFound("Links not found")
+	}
+	return links, nil
+}
+
+func (s *Service) FindOne(params *FindParams) (*model.Link, error) {
+	link, err := s.Repository.FindOne(params)
 	if err != nil {
 		return nil, apperror.NotFound("Link not found")
 	}
@@ -34,7 +42,7 @@ func (s *Service) Find(params *FindParams) (*model.Link, error) {
 }
 
 func (s *Service) Delete(params *FindParams) error {
-	link, err := s.Find(params)
+	link, err := s.FindOne(params)
 	if err != nil {
 		return apperror.NotFound("Link not found")
 	}

@@ -15,7 +15,7 @@ import (
 )
 
 type Handler struct {
-	HandlerDeps
+	*HandlerDeps
 }
 
 type userService interface {
@@ -30,9 +30,9 @@ type HandlerDeps struct {
 	EventBus    *bus.EventBus
 }
 
-func RegisterLinkHandler(linkHandlerDeps HandlerDeps) {
+func RegisterLinkHandler(deps *HandlerDeps) {
 	handler := &Handler{
-		linkHandlerDeps,
+		deps,
 	}
 	handler.Router.Handle("POST /link", middleware.IsAuthed(http.HandlerFunc(handler.create), *handler.Config))
 	handler.Router.Handle("GET /{hash}", http.HandlerFunc(handler.goTo))
@@ -42,7 +42,7 @@ func RegisterLinkHandler(linkHandlerDeps HandlerDeps) {
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	userData, err := jwt.GetClaimsFromContext[auth.JwtAuthUserData](r.Context())
 	if err != nil {
-		apperror.HandleError(apperror.Internal("Failed to proccess JWT token"), w)
+		apperror.HandleError(apperror.Internal("Failed to process JWT token"), w)
 		return
 	}
 
@@ -52,7 +52,7 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := request.GetBody[CreateRequestPayload](w, r)
+	body, err := request.GetBody[CreateRequestPayload](r)
 	if err != nil {
 		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
@@ -68,8 +68,8 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) goTo(w http.ResponseWriter, r *http.Request) {
 	hash := r.PathValue("hash")
-	link, err := h.Service.Find(&FindParams{
-		hash: hash,
+	link, err := h.Service.FindOne(&FindParams{
+		Hash: hash,
 	})
 	if err != nil {
 		apperror.HandleError(err, w)
@@ -94,17 +94,17 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := request.GetBody[DeleteRequestPayload](w, r)
+	body, err := request.GetBody[DeleteRequestPayload](r)
 	if err != nil {
 		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
 
 	err = h.Service.Delete(&FindParams{
-		hash:   body.Hash,
-		url:    body.Url,
-		id:     body.Id,
-		userId: user.ID,
+		Hash:   body.Hash,
+		Url:    body.Url,
+		Id:     body.Id,
+		UserId: user.ID,
 	})
 	if err != nil {
 		apperror.HandleError(err, w)

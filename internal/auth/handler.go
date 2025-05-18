@@ -9,39 +9,39 @@ import (
 	"net/http"
 )
 
-type authHandler struct {
-	deps AuthHandlerDeps
+type Handler struct {
+	*HandlerDeps
 }
 
-type AuthHandlerDeps struct {
+type HandlerDeps struct {
 	Router      *http.ServeMux
 	Config      *config.Config
 	Jwt         *jwt.JWT
 	AuthService *Service
 }
 
-func ReqisterAuthHandler(AuthHandlerDeps AuthHandlerDeps) {
-	handler := &authHandler{
-		deps: AuthHandlerDeps,
+func RegisterAuthHandler(AuthHandlerDeps *HandlerDeps) {
+	handler := &Handler{
+		AuthHandlerDeps,
 	}
-	handler.deps.Router.HandleFunc("POST /auth/login", handler.login)
-	handler.deps.Router.HandleFunc("POST /auth/register", handler.register)
+	handler.Router.HandleFunc("POST /auth/login", handler.login)
+	handler.Router.HandleFunc("POST /auth/register", handler.register)
 }
 
-func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
-	body, err := request.GetBody[LoginRequestPayload](w, r)
+func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
+	body, err := request.GetBody[LoginRequestPayload](r)
 	if err != nil {
 		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
 
-	user, err := h.deps.AuthService.Login(body.Email, body.Password)
+	user, err := h.AuthService.Login(body.Email, body.Password)
 	if err != nil {
 		apperror.HandleError(err, w)
 		return
 	}
 
-	token, err := h.deps.Jwt.Create(map[string]any{
+	token, err := h.Jwt.Create(map[string]any{
 		"email": user.Email,
 	})
 	if err != nil {
@@ -54,20 +54,20 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
-	body, err := request.GetBody[RegisterRequestPayload](w, r)
+func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
+	body, err := request.GetBody[RegisterRequestPayload](r)
 	if err != nil {
 		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
 
-	user, err := h.deps.AuthService.Register(body.Email, body.Password, body.Name)
+	user, err := h.AuthService.Register(body.Email, body.Password, body.Name)
 	if err != nil {
 		apperror.HandleError(apperror.BadRequest(err.Error()), w)
 		return
 	}
 
-	token, err := h.deps.Jwt.Create(map[string]any{
+	token, err := h.Jwt.Create(map[string]any{
 		"email": user.Email,
 	})
 	if err != nil {

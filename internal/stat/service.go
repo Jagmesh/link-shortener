@@ -7,7 +7,7 @@ import (
 )
 
 type Service struct {
-	deps *ServiceDeps
+	*ServiceDeps
 }
 
 type ServiceDeps struct {
@@ -15,22 +15,26 @@ type ServiceDeps struct {
 }
 
 func NewService(deps *ServiceDeps) *Service {
-	return &Service{deps: deps}
+	return &Service{deps}
 }
 
-func (s Service) AddClick(linkId uint) error {
-	return s.deps.Repository.CreateOrIncrementClick(linkId)
-}
-
-func (s Service) ListenClick(eventBus *bus.EventBus) error {
+func (s *Service) ListenClick(eventBus *bus.EventBus) error {
 	for ev := range eventBus.Consume(event.ClickEventName) {
 		id, ok := ev.Data.(uint)
 		if !ok {
 			return errors.New("event Data is not uint")
 		}
-		if s.deps.Repository.CreateOrIncrementClick(id) != nil {
+		if s.Repository.CreateOrIncrementClick(id) != nil {
 			return errors.New("failed to add click")
 		}
 	}
 	return nil
+}
+
+func (s *Service) GetClicksNumberByDate(linksId []uint, from string, to string) (uint, error) {
+	stat, err := s.Repository.GetClicksCountByDate(linksId, from, to)
+	if err != nil {
+		return 0, err
+	}
+	return stat, nil
 }
